@@ -115,9 +115,8 @@ class Import extends CI_Controller {
                         continue;
                     }
                     
-                    // Generate default password (nomor telepon tanpa 0)
-                    $default_password = ltrim($nomor_telepon, '0');
-                    $hashed_password = password_hash($default_password, PASSWORD_DEFAULT);
+                    // Generate default password
+                    $hashed_password = password_hash('user123', PASSWORD_DEFAULT);
                     
                     // Check if user already exists
                     $existing_user = $this->Auth_model->get_user_by_phone($nomor_telepon);

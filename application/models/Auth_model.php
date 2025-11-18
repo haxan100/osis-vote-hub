@@ -73,8 +73,7 @@ class Auth_model extends CI_Model {
     public function reset_password($id) {
         $user = $this->get_user_by_id($id);
         if ($user) {
-            $default_password = ltrim($user['user_id'], '0');
-            $hashed_password = password_hash($default_password, PASSWORD_DEFAULT);
+            $hashed_password = password_hash('user123', PASSWORD_DEFAULT);
             
             $data = array(
                 'password' => $hashed_password,
