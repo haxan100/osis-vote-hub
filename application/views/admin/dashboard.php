@@ -5,6 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard Admin - E-Voting OSIS</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/jquery.dataTables.min.css">
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
     <style>
         :root {
             --primary: hsl(217, 91%, 60%);
@@ -531,6 +534,116 @@
             }
         }
 
+        .table-responsive {
+            overflow-x: auto;
+        }
+
+        .dataTables_wrapper {
+            color: var(--foreground);
+        }
+
+        .dataTables_filter input {
+            background: var(--background);
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            padding: 0.5rem;
+            color: var(--foreground);
+        }
+
+        .dataTables_length select {
+            background: var(--background);
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            padding: 0.25rem;
+            color: var(--foreground);
+        }
+
+        .badge-success {
+            background: var(--success);
+            color: white;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+        }
+
+        .badge-warning {
+            background: #f59e0b;
+            color: white;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+        }
+
+        .badge-danger {
+            background: var(--destructive);
+            color: white;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+        }
+
+        .btn-edit, .btn-reset, .btn-delete {
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 1.2rem;
+            margin: 0 0.25rem;
+            padding: 0.25rem;
+            border-radius: 4px;
+            transition: background 0.2s;
+        }
+
+        .btn-edit:hover {
+            background: rgba(59, 130, 246, 0.1);
+        }
+
+        .btn-reset:hover {
+            background: rgba(245, 158, 11, 0.1);
+        }
+
+        .btn-delete:hover {
+            background: rgba(239, 68, 68, 0.1);
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 1rem 1.5rem;
+            border-radius: 8px;
+            color: white;
+            font-weight: 500;
+            z-index: 9999;
+            transform: translateX(400px);
+            transition: transform 0.3s ease;
+        }
+
+        .notification.show {
+            transform: translateX(0);
+        }
+
+        .notification.success {
+            background: var(--success);
+        }
+
+        .notification.error {
+            background: var(--destructive);
+        }
+
         @media (max-width: 768px) {
             .header-content {
                 flex-direction: column;
@@ -710,15 +823,28 @@
             <div class="tab-content" id="voters">
                 <div class="card">
                     <div class="card-header">
-                        <h3 class="card-title">Manajemen Pemilih</h3>
-                        <p class="card-description">Import dan kelola data pemilih</p>
+                        <h3 class="card-title">Data Pemilih</h3>
+                        <p class="card-description">Daftar semua pemilih terdaftar</p>
                     </div>
                     <div class="card-content">
-                        <button class="btn btn-primary" style="margin-bottom: 1rem;">
-                            👥 Import Data Pemilih
+                        <button class="btn btn-primary" onclick="openImportModal()" style="margin-bottom: 1rem;">
+                            📎 Import Data Pemilih
                         </button>
-                        <div style="border: 2px solid var(--border); border-radius: 12px; padding: 2rem; text-align: center; color: var(--muted-foreground);">
-                            Daftar pemilih akan ditampilkan di sini
+                        
+                        <div class="table-responsive">
+                            <table id="usersTable" class="display" style="width:100%">
+                                <thead>
+                                    <tr>
+                                        <th>No</th>
+                                        <th>Nama</th>
+                                        <th>Nomor Telepon</th>
+                                        <th>Kelas</th>
+                                        <th>Status Voting</th>
+                                        <th>Password Default</th>
+                                        <th>Aksi</th>
+                                    </tr>
+                                </thead>
+                            </table>
                         </div>
                     </div>
                 </div>
@@ -779,6 +905,65 @@
             </div>
         </div>
     </main>
+
+    <!-- Import Modal -->
+    <div class="modal" id="importModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Import Data Pemilih</h3>
+                <button class="close-btn" onclick="closeImportModal()">&times;</button>
+            </div>
+            
+            <form id="importForm" enctype="multipart/form-data">
+                <div class="form-group">
+                    <label class="label">File Excel</label>
+                    <input type="file" name="excel_file" class="input" accept=".xlsx,.xls" required>
+                </div>
+                <div style="margin-bottom: 1rem;">
+                    <a href="<?= base_url('import/download_template') ?>" class="btn btn-primary">
+                        📎 Download Template
+                    </a>
+                </div>
+                <div style="display: flex; gap: 1rem;">
+                    <button type="submit" class="btn btn-primary" id="uploadBtn">
+                        <span id="uploadText">Upload</span>
+                        <span id="uploadLoading" class="loading" style="display: none;"></span>
+                    </button>
+                    <button type="button" class="btn" onclick="closeImportModal()" id="cancelBtn">Batal</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Edit User Modal -->
+    <div class="modal" id="editUserModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Edit Data Pemilih</h3>
+                <button class="close-btn" onclick="closeEditUserModal()">&times;</button>
+            </div>
+            
+            <form id="editUserForm">
+                <input type="hidden" id="editUserId" name="user_id">
+                <div class="form-group">
+                    <label class="label">Nama</label>
+                    <input type="text" id="editUserName" name="name" class="input" required>
+                </div>
+                <div class="form-group">
+                    <label class="label">Nomor Telepon</label>
+                    <input type="text" id="editUserPhone" name="phone" class="input" required>
+                </div>
+                <div class="form-group">
+                    <label class="label">Kelas</label>
+                    <input type="text" id="editUserKelas" name="kelas" class="input" required>
+                </div>
+                <div style="display: flex; gap: 1rem;">
+                    <button type="submit" class="btn btn-primary">Update</button>
+                    <button type="button" class="btn" onclick="closeEditUserModal()">Batal</button>
+                </div>
+            </form>
+        </div>
+    </div>
 
     <!-- Edit Candidate Modal -->
     <div class="modal" id="editModal">
@@ -1150,10 +1335,180 @@
             }
         });
 
+        // DataTable initialization
+        let usersTable;
+        
+        function initUsersTable() {
+            usersTable = $('#usersTable').DataTable({
+                processing: true,
+                serverSide: true,
+                ajax: {
+                    url: '<?= base_url('admin/users_datatable') ?>',
+                    type: 'POST'
+                },
+                columns: [
+                    { data: 0, orderable: false },
+                    { data: 1 },
+                    { data: 2 },
+                    { data: 3 },
+                    { data: 4, orderable: false },
+                    { data: 5, orderable: false },
+                    { data: 6, orderable: false }
+                ],
+                pageLength: 25,
+                language: {
+                    search: 'Cari:',
+                    lengthMenu: 'Tampilkan _MENU_ data per halaman',
+                    info: 'Menampilkan _START_ sampai _END_ dari _TOTAL_ data',
+                    paginate: {
+                        first: 'Pertama',
+                        last: 'Terakhir',
+                        next: 'Selanjutnya',
+                        previous: 'Sebelumnya'
+                    }
+                }
+            });
+        }
+        
+        // Import modal functions
+        function openImportModal() {
+            document.getElementById('importModal').classList.add('active');
+        }
+        
+        function closeImportModal() {
+            document.getElementById('importModal').classList.remove('active');
+        }
+        
+        // Edit user modal functions
+        function editUser(id, name, phone, kelas) {
+            document.getElementById('editUserId').value = id;
+            document.getElementById('editUserName').value = name;
+            document.getElementById('editUserPhone').value = phone;
+            document.getElementById('editUserKelas').value = kelas;
+            document.getElementById('editUserModal').classList.add('active');
+        }
+        
+        function closeEditUserModal() {
+            document.getElementById('editUserModal').classList.remove('active');
+        }
+        
+        function resetPassword(id, name) {
+            if (confirm(`Yakin ingin reset password untuk ${name}?\nPassword akan direset ke nomor telepon tanpa angka 0 di depan.`)) {
+                fetch('<?= base_url('admin/reset_password') ?>', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: `user_id=${id}`
+                })
+                .then(response => response.json())
+                .then(data => {
+                    showNotification(data.message, data.status);
+                    if (data.status === 'success') {
+                        usersTable.ajax.reload();
+                    }
+                })
+                .catch(() => showNotification('Terjadi kesalahan', 'error'));
+            }
+        }
+        
+        function deleteUser(id, name) {
+            if (confirm(`Yakin ingin menghapus ${name}?`)) {
+                fetch('<?= base_url('admin/delete_user') ?>', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: `user_id=${id}`
+                })
+                .then(response => response.json())
+                .then(data => {
+                    showNotification(data.message, data.status);
+                    if (data.status === 'success') {
+                        usersTable.ajax.reload();
+                    }
+                })
+                .catch(() => showNotification('Terjadi kesalahan', 'error'));
+            }
+        }
+        
+        // Notification function
+        function showNotification(message, type = 'success') {
+            const notification = document.createElement('div');
+            notification.className = `notification ${type}`;
+            notification.textContent = message;
+            document.body.appendChild(notification);
+            
+            setTimeout(() => notification.classList.add('show'), 100);
+            
+            setTimeout(() => {
+                notification.classList.remove('show');
+                setTimeout(() => document.body.removeChild(notification), 300);
+            }, 4000);
+        }
+        
+        // Form submissions
+        document.getElementById('importForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const uploadBtn = document.getElementById('uploadBtn');
+            const uploadText = document.getElementById('uploadText');
+            const uploadLoading = document.getElementById('uploadLoading');
+            const cancelBtn = document.getElementById('cancelBtn');
+            
+            // Show loading state
+            uploadBtn.disabled = true;
+            cancelBtn.disabled = true;
+            uploadText.style.display = 'none';
+            uploadLoading.style.display = 'inline-block';
+            
+            const formData = new FormData(this);
+            
+            fetch('<?= base_url('import/upload_data') ?>', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                showNotification(data.message, data.status);
+                if (data.status === 'success') {
+                    closeImportModal();
+                    usersTable.ajax.reload();
+                    this.reset();
+                }
+            })
+            .catch(error => {
+                showNotification('Terjadi kesalahan saat upload', 'error');
+            })
+            .finally(() => {
+                // Reset button state
+                uploadBtn.disabled = false;
+                cancelBtn.disabled = false;
+                uploadText.style.display = 'inline';
+                uploadLoading.style.display = 'none';
+            });
+        });
+        
+        document.getElementById('editUserForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const formData = new FormData(this);
+            
+            fetch('<?= base_url('admin/edit_user') ?>', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                showNotification(data.message, data.status);
+                if (data.status === 'success') {
+                    closeEditUserModal();
+                    usersTable.ajax.reload();
+                }
+            })
+            .catch(() => showNotification('Terjadi kesalahan', 'error'));
+        });
+
         // Initialize when page loads
         document.addEventListener('DOMContentLoaded', () => {
             initCharts();
             loadVoteData();
+            initUsersTable();
             
             // Auto refresh every 30 seconds
             setInterval(loadVoteData, 30000);
