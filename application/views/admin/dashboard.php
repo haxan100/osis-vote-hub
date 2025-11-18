@@ -23,9 +23,26 @@
             --background: hsl(222, 47%, 11%);
             --foreground: hsl(0, 0%, 98%);
             --card: hsl(222, 47%, 15%);
-            --muted: hsl(220, 13%, 20%);
-            --muted-foreground: hsl(220, 9%, 65%);
-            --border: hsl(220, 13%, 25%);
+            --muted: hsl(220, 13%, 18%);
+            --muted-foreground: hsl(220, 9%, 75%);
+            --border: hsl(220, 13%, 30%);
+        }
+
+        [data-theme="dark"] .input,
+        [data-theme="dark"] .textarea {
+            background: hsl(220, 13%, 25%);
+            color: hsl(0, 0%, 98%);
+            border-color: hsl(220, 13%, 35%);
+        }
+
+        [data-theme="dark"] .btn {
+            background: hsl(220, 13%, 25%);
+            color: hsl(0, 0%, 98%);
+            border-color: hsl(220, 13%, 35%);
+        }
+
+        [data-theme="dark"] .btn:hover {
+            background: hsl(220, 13%, 30%);
         }
 
         * {
@@ -653,49 +670,37 @@
                         <p class="card-description">Kelola data kandidat ketua & wakil OSIS</p>
                     </div>
                     <div class="card-content">
+                        <button class="btn btn-primary" onclick="addCandidate()" style="margin-bottom: 1rem;">
+                            ➕ Tambah Kandidat
+                        </button>
+                        
                         <div class="candidate-list">
+                            <?php 
+                            $colors = ['#3B82F6', '#8B5CF6', '#10B981', '#F59E0B', '#EF4444'];
+                            foreach($candidates as $index => $candidate): 
+                            ?>
                             <div class="candidate-item">
-                                <div>
-                                    <p style="font-weight: 600;">Pasangan Calon 1</p>
-                                    <p style="font-size: 0.875rem; color: var(--muted-foreground);">Ahmad Rizki & Sari Dewi</p>
+                                <div style="display: flex; align-items: center; gap: 1rem;">
+                                    <?php if($candidate['couple_photo'] && file_exists($candidate['couple_photo'])): ?>
+                                        <img src="<?= base_url($candidate['couple_photo']) ?>" alt="Foto Bersama" style="width: 80px; height: 60px; border-radius: 8px; object-fit: cover; border: 2px solid var(--border);">
+                                    <?php else: ?>
+                                        <div style="width: 80px; height: 60px; border-radius: 8px; background: <?= $colors[$index % 5] ?>; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 1.5rem; border: 2px solid var(--border);"><?= $candidate['candidate_number'] ?></div>
+                                    <?php endif; ?>
+                                    <div>
+                                        <p style="font-weight: 600;"><?= $candidate['ketua_name'] ?> & <?= $candidate['wakil_name'] ?></p>
+                                        <p style="font-size: 0.875rem; color: var(--muted-foreground);">Nomor Urut <?= $candidate['candidate_number'] ?></p>
+                                    </div>
                                 </div>
                                 <div style="display: flex; gap: 0.5rem;">
-                                    <button class="btn" onclick="editCandidate(1)">
+                                    <button class="btn" onclick="editCandidate(<?= $candidate['candidate_number'] ?>)">
                                         ✏️ Edit
                                     </button>
-                                    <button class="btn btn-destructive" onclick="deleteCandidate(1)">
+                                    <button class="btn btn-destructive" onclick="deleteCandidate(<?= $candidate['candidate_number'] ?>)">
                                         🗑️ Hapus
                                     </button>
                                 </div>
                             </div>
-                            <div class="candidate-item">
-                                <div>
-                                    <p style="font-weight: 600;">Pasangan Calon 2</p>
-                                    <p style="font-size: 0.875rem; color: var(--muted-foreground);">Siti Aisyah & Budi Hartono</p>
-                                </div>
-                                <div style="display: flex; gap: 0.5rem;">
-                                    <button class="btn" onclick="editCandidate(2)">
-                                        ✏️ Edit
-                                    </button>
-                                    <button class="btn btn-destructive" onclick="deleteCandidate(2)">
-                                        🗑️ Hapus
-                                    </button>
-                                </div>
-                            </div>
-                            <div class="candidate-item">
-                                <div>
-                                    <p style="font-weight: 600;">Pasangan Calon 3</p>
-                                    <p style="font-size: 0.875rem; color: var(--muted-foreground);">Muhammad Farhan & Rina Sari</p>
-                                </div>
-                                <div style="display: flex; gap: 0.5rem;">
-                                    <button class="btn" onclick="editCandidate(3)">
-                                        ✏️ Edit
-                                    </button>
-                                    <button class="btn btn-destructive" onclick="deleteCandidate(3)">
-                                        🗑️ Hapus
-                                    </button>
-                                </div>
-                            </div>
+                            <?php endforeach; ?>
                         </div>
                     </div>
                 </div>
@@ -779,18 +784,24 @@
     <div class="modal" id="editModal">
         <div class="modal-content">
             <div class="modal-header">
-                <h3 class="modal-title">Edit Kandidat</h3>
+                <h3 class="modal-title" id="modalTitle">Edit Kandidat</h3>
                 <button class="close-btn" onclick="closeEditModal()">&times;</button>
             </div>
             
-            <form id="editCandidateForm">
-                <input type="hidden" id="candidateId">
+            <form id="editCandidateForm" enctype="multipart/form-data">
+                <input type="hidden" name="candidate_id" id="candidateId">
+                
+                <!-- Candidate Number -->
+                <div class="form-group" id="candidateNumberGroup" style="display: none;">
+                    <label class="label">Nomor Urut Kandidat</label>
+                    <input type="number" name="candidate_number" id="candidateNumber" class="input" min="1">
+                </div>
                 
                 <!-- Photo Uploads -->
                 <div class="photo-grid">
                     <div class="photo-upload">
                         <div class="photo-placeholder" id="ketuaPreview">👤</div>
-                        <input type="file" id="ketuaPhoto" class="file-input" accept="image/*" onchange="previewPhoto(this, 'ketuaPreview')">
+                        <input type="file" name="ketua_photo" id="ketuaPhoto" class="file-input" accept="image/*" onchange="previewPhoto(this, 'ketuaPreview')">
                         <button type="button" class="upload-btn" onclick="document.getElementById('ketuaPhoto').click()">
                             Upload Foto Ketua
                         </button>
@@ -798,7 +809,7 @@
                     
                     <div class="photo-upload">
                         <div class="photo-placeholder" id="wakilPreview">👤</div>
-                        <input type="file" id="wakilPhoto" class="file-input" accept="image/*" onchange="previewPhoto(this, 'wakilPreview')">
+                        <input type="file" name="wakil_photo" id="wakilPhoto" class="file-input" accept="image/*" onchange="previewPhoto(this, 'wakilPreview')">
                         <button type="button" class="upload-btn" onclick="document.getElementById('wakilPhoto').click()">
                             Upload Foto Wakil
                         </button>
@@ -807,7 +818,7 @@
                 
                 <div class="photo-upload couple-photo">
                     <div class="photo-placeholder" id="couplePreview" style="width: 200px; height: 150px;">👥</div>
-                    <input type="file" id="couplePhoto" class="file-input" accept="image/*" onchange="previewPhoto(this, 'couplePreview')">
+                    <input type="file" name="couple_photo" id="couplePhoto" class="file-input" accept="image/*" onchange="previewPhoto(this, 'couplePreview')">
                     <button type="button" class="upload-btn" onclick="document.getElementById('couplePhoto').click()">
                         Upload Foto Bersama (Foto Utama)
                     </button>
@@ -817,24 +828,24 @@
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
                     <div class="form-group">
                         <label class="label">Nama Ketua</label>
-                        <input type="text" id="ketuaName" class="input" required>
+                        <input type="text" name="ketua_name" id="ketuaName" class="input" required>
                     </div>
                     <div class="form-group">
                         <label class="label">Nama Wakil</label>
-                        <input type="text" id="wakilName" class="input" required>
+                        <input type="text" name="wakil_name" id="wakilName" class="input" required>
                     </div>
                 </div>
                 
                 <!-- Vision -->
                 <div class="form-group">
                     <label class="label">Visi</label>
-                    <textarea id="vision" class="textarea" placeholder="Masukkan visi kandidat..." required></textarea>
+                    <textarea name="vision" id="vision" class="textarea" placeholder="Masukkan visi kandidat..." required></textarea>
                 </div>
                 
                 <!-- Mission -->
                 <div class="form-group">
                     <label class="label">Misi</label>
-                    <textarea id="mission" class="textarea" placeholder="Masukkan misi kandidat..." required></textarea>
+                    <textarea name="mission" id="mission" class="textarea" placeholder="Masukkan misi kandidat..." required></textarea>
                 </div>
                 
                 <div style="display: flex; gap: 1rem; justify-content: flex-end;">
@@ -1035,6 +1046,109 @@
                 console.log('Using dummy data');
             }
         }
+
+        // Candidate management functions
+        function addCandidate() {
+            document.getElementById('modalTitle').textContent = 'Tambah Kandidat';
+            document.getElementById('candidateNumberGroup').style.display = 'block';
+            document.getElementById('candidateNumber').required = true;
+            document.getElementById('editCandidateForm').reset();
+            document.getElementById('candidateId').value = '';
+            
+            // Reset photo previews
+            document.getElementById('ketuaPreview').innerHTML = '👤';
+            document.getElementById('wakilPreview').innerHTML = '👤';
+            document.getElementById('couplePreview').innerHTML = '👥';
+            
+            document.getElementById('editModal').classList.add('active');
+        }
+        
+        function editCandidate(candidateNumber) {
+            document.getElementById('modalTitle').textContent = 'Edit Kandidat';
+            document.getElementById('candidateNumberGroup').style.display = 'none';
+            document.getElementById('candidateNumber').required = false;
+            
+            // Load candidate data
+            const candidates = {
+                1: { ketua: 'Ahmad Rizki', wakil: 'Sari Dewi', vision: 'Menjadikan OSIS sebagai wadah aspirasi siswa yang demokratis dan inovatif', mission: 'Meningkatkan partisipasi siswa dalam kegiatan sekolah, Mengembangkan program kreatif dan edukatif, Memperkuat komunikasi antar siswa' },
+                2: { ketua: 'Siti Aisyah', wakil: 'Budi Hartono', vision: 'Membangun OSIS yang transparan dan berorientasi pada prestasi siswa', mission: 'Mengoptimalkan fasilitas sekolah, Mengadakan kompetisi akademik dan non-akademik, Meningkatkan kerjasama dengan pihak eksternal' },
+                3: { ketua: 'Muhammad Farhan', wakil: 'Rina Sari', vision: 'Menciptakan lingkungan sekolah yang harmonis dan berprestasi', mission: 'Mengembangkan program lingkungan hijau, Meningkatkan kegiatan sosial dan kemanusiaan, Memperkuat budaya literasi di sekolah' }
+            };
+            
+            const candidate = candidates[candidateNumber];
+            if (candidate) {
+                document.getElementById('candidateId').value = candidateNumber;
+                document.getElementById('ketuaName').value = candidate.ketua;
+                document.getElementById('wakilName').value = candidate.wakil;
+                document.getElementById('vision').value = candidate.vision;
+                document.getElementById('mission').value = candidate.mission;
+                
+                // Reset photo previews (would load actual photos in real implementation)
+                document.getElementById('ketuaPreview').innerHTML = '👤';
+                document.getElementById('wakilPreview').innerHTML = '👤';
+                document.getElementById('couplePreview').innerHTML = '👥';
+                
+                document.getElementById('editModal').classList.add('active');
+            }
+        }
+        
+        function deleteCandidate(candidateNumber) {
+            if (confirm(`Apakah Anda yakin ingin menghapus Pasangan Calon ${candidateNumber}?`)) {
+                alert(`Pasangan Calon ${candidateNumber} berhasil dihapus!`);
+                // Add delete logic here
+            }
+        }
+        
+        function closeEditModal() {
+            document.getElementById('editModal').classList.remove('active');
+        }
+        
+        function previewPhoto(input, previewId) {
+            const file = input.files[0];
+            const preview = document.getElementById(previewId);
+            
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    preview.innerHTML = `<img src="${e.target.result}" class="photo-preview" alt="Preview">`;
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+        
+        // Handle form submission
+        document.getElementById('editCandidateForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            
+            try {
+                const response = await fetch('<?= base_url('candidate/save') ?>', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const result = await response.json();
+                
+                if (result.status === 'success') {
+                    alert(result.message);
+                    closeEditModal();
+                    location.reload(); // Refresh to show updated data
+                } else {
+                    alert('Terjadi kesalahan: ' + (result.message || 'Unknown error'));
+                }
+            } catch (error) {
+                alert('Terjadi kesalahan sistem');
+                console.error(error);
+            }
+        });
+        
+        // Close modal when clicking outside
+        document.getElementById('editModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeEditModal();
+            }
+        });
 
         // Initialize when page loads
         document.addEventListener('DOMContentLoaded', () => {

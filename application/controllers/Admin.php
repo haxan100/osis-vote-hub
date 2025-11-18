@@ -15,7 +15,9 @@ class Admin extends CI_Controller {
     }
 
     public function index() {
+        $this->load->model('Candidate_model');
         $data['admin_name'] = $this->session->userdata('user_name');
+        $data['candidates'] = $this->Candidate_model->get_all_candidates();
         $this->load->view('admin/dashboard', $data);
     }
 }

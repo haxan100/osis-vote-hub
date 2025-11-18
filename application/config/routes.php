@@ -56,3 +56,4 @@ $route['admin'] = 'admin';
 $route['login'] = 'auth';
 $route['logout'] = 'auth/logout';
 $route['api/vote_data'] = 'api/vote_data';
+$route['candidate/save'] = 'candidate/save';
