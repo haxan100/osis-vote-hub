@@ -7,6 +7,7 @@ class Admin extends CI_Controller {
         parent::__construct();
         $this->load->model('Auth_model');
         $this->load->model('Candidate_model');
+        $this->load->model('Settings_model');
         $this->check_login();
     }
 
@@ -19,6 +20,7 @@ class Admin extends CI_Controller {
     public function index() {
         $data['admin_name'] = $this->session->userdata('user_name');
         $data['candidates'] = $this->Candidate_model->get_all_candidates();
+        $data['voting_schedule'] = $this->Settings_model->get_voting_schedule();
         $this->load->view('admin/dashboard', $data);
     }
 
@@ -110,5 +112,32 @@ class Admin extends CI_Controller {
         );
         
         echo json_encode($response);
+    }
+
+    public function update_schedule() {
+        $start_time = $this->input->post('start_time');
+        $end_time = $this->input->post('end_time');
+        
+        // Validasi
+        if (empty($start_time) || empty($end_time)) {
+            echo json_encode(array('status' => 'error', 'message' => 'Waktu mulai dan selesai harus diisi'));
+            return;
+        }
+        
+        if (strtotime($start_time) >= strtotime($end_time)) {
+            echo json_encode(array('status' => 'error', 'message' => 'Waktu mulai harus lebih awal dari waktu selesai'));
+            return;
+        }
+        
+        if (strtotime($end_time) < time()) {
+            echo json_encode(array('status' => 'error', 'message' => 'Waktu selesai tidak boleh di masa lalu'));
+            return;
+        }
+        
+        if ($this->Settings_model->update_voting_schedule($start_time, $end_time)) {
+            echo json_encode(array('status' => 'success', 'message' => 'Jadwal pemilihan berhasil diupdate'));
+        } else {
+            echo json_encode(array('status' => 'error', 'message' => 'Gagal mengupdate jadwal'));
+        }
     }
 }

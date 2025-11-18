@@ -55,6 +55,7 @@ $route['translate_uri_dashes'] = FALSE;
 $route['admin'] = 'admin';
 $route['admin/users'] = 'admin/users';
 $route['admin/users_datatable'] = 'admin/users_datatable';
+$route['admin/update_schedule'] = 'admin/update_schedule';
 $route['login'] = 'auth';
 $route['logout'] = 'auth/logout';
 $route['api/vote_data'] = 'api/vote_data';

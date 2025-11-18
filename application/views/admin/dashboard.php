@@ -858,19 +858,31 @@
                         <p class="card-description">Atur jadwal mulai dan selesai pemilihan</p>
                     </div>
                     <div class="card-content">
-                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem; margin-bottom: 1rem;">
-                            <div class="form-group">
-                                <label class="label">Waktu Mulai</label>
-                                <input type="datetime-local" class="input">
+                        <form id="scheduleForm">
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem; margin-bottom: 1rem;">
+                                <div class="form-group">
+                                    <label class="label">Waktu Mulai</label>
+                                    <input type="datetime-local" id="startTime" name="start_time" class="input" 
+                                           value="<?= isset($voting_schedule['voting_start']) ? date('Y-m-d\TH:i', strtotime($voting_schedule['voting_start'])) : '' ?>" required>
+                                    <small style="color: var(--muted-foreground); font-size: 0.75rem;">Saat ini: <?= isset($voting_schedule['voting_start']) ? date('d M Y, H:i', strtotime($voting_schedule['voting_start'])) : 'Belum diatur' ?></small>
+                                </div>
+                                <div class="form-group">
+                                    <label class="label">Waktu Selesai</label>
+                                    <input type="datetime-local" id="endTime" name="end_time" class="input" 
+                                           value="<?= isset($voting_schedule['voting_end']) ? date('Y-m-d\TH:i', strtotime($voting_schedule['voting_end'])) : '' ?>" required>
+                                    <small style="color: var(--muted-foreground); font-size: 0.75rem;">Saat ini: <?= isset($voting_schedule['voting_end']) ? date('d M Y, H:i', strtotime($voting_schedule['voting_end'])) : 'Belum diatur' ?></small>
+                                </div>
                             </div>
-                            <div class="form-group">
-                                <label class="label">Waktu Selesai</label>
-                                <input type="datetime-local" class="input">
-                            </div>
+                            <button type="submit" class="btn btn-primary" id="saveScheduleBtn">
+                                <span id="saveScheduleText">⏰ Simpan Jadwal</span>
+                                <span id="saveScheduleLoading" class="loading" style="display: none;"></span>
+                            </button>
+                        </form>
+                        
+                        <div style="margin-top: 1.5rem; padding: 1rem; background: var(--muted); border-radius: 8px;">
+                            <h4 style="margin-bottom: 0.5rem; color: var(--foreground);">Status Pemilihan</h4>
+                            <p id="votingStatus" style="color: var(--muted-foreground); font-size: 0.875rem;"></p>
                         </div>
-                        <button class="btn btn-primary">
-                            ⏰ Simpan Jadwal
-                        </button>
                     </div>
                 </div>
             </div>
@@ -1503,12 +1515,84 @@
             })
             .catch(() => showNotification('Terjadi kesalahan', 'error'));
         });
+        
+        // Schedule form
+        document.getElementById('scheduleForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const startTime = document.getElementById('startTime').value;
+            const endTime = document.getElementById('endTime').value;
+            const saveBtn = document.getElementById('saveScheduleBtn');
+            const saveText = document.getElementById('saveScheduleText');
+            const saveLoading = document.getElementById('saveScheduleLoading');
+            
+            // Validasi client-side
+            if (new Date(startTime) >= new Date(endTime)) {
+                showNotification('Waktu mulai harus lebih awal dari waktu selesai', 'error');
+                return;
+            }
+            
+            if (new Date(endTime) < new Date()) {
+                showNotification('Waktu selesai tidak boleh di masa lalu', 'error');
+                return;
+            }
+            
+            // Show loading
+            saveBtn.disabled = true;
+            saveText.style.display = 'none';
+            saveLoading.style.display = 'inline-block';
+            
+            const formData = new FormData(this);
+            
+            fetch('<?= base_url('admin/update_schedule') ?>', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                showNotification(data.message, data.status);
+                if (data.status === 'success') {
+                    updateVotingStatus();
+                }
+            })
+            .catch(() => showNotification('Terjadi kesalahan', 'error'))
+            .finally(() => {
+                saveBtn.disabled = false;
+                saveText.style.display = 'inline';
+                saveLoading.style.display = 'none';
+            });
+        });
+        
+        // Update voting status
+        function updateVotingStatus() {
+            const startTime = document.getElementById('startTime').value;
+            const endTime = document.getElementById('endTime').value;
+            const statusEl = document.getElementById('votingStatus');
+            
+            if (!startTime || !endTime) {
+                statusEl.textContent = 'Jadwal pemilihan belum diatur';
+                return;
+            }
+            
+            const now = new Date();
+            const start = new Date(startTime);
+            const end = new Date(endTime);
+            
+            if (now < start) {
+                statusEl.innerHTML = `Pemilihan akan dimulai pada <strong>${start.toLocaleString('id-ID')}</strong>`;
+            } else if (now >= start && now <= end) {
+                statusEl.innerHTML = `Pemilihan sedang berlangsung sampai <strong>${end.toLocaleString('id-ID')}</strong>`;
+            } else {
+                statusEl.innerHTML = `Pemilihan telah selesai pada <strong>${end.toLocaleString('id-ID')}</strong>`;
+            }
+        }
 
         // Initialize when page loads
         document.addEventListener('DOMContentLoaded', () => {
             initCharts();
             loadVoteData();
             initUsersTable();
+            updateVotingStatus();
             
             // Auto refresh every 30 seconds
             setInterval(loadVoteData, 30000);
