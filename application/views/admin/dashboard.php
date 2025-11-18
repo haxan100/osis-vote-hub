@@ -582,6 +582,30 @@
             font-size: 0.75rem;
         }
 
+        .badge-primary {
+            background: var(--primary);
+            color: white;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+        }
+
+        .badge-info {
+            background: #06b6d4;
+            color: white;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+        }
+
+        .badge-secondary {
+            background: #6b7280;
+            color: white;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+        }
+
         .btn-edit, .btn-reset, .btn-delete {
             background: none;
             border: none;
@@ -744,6 +768,9 @@
                 </button>
                 <button class="tab-btn" data-tab="settings">
                     ⚙️ <span>Pengaturan</span>
+                </button>
+                <button class="tab-btn" data-tab="logs">
+                    📋 <span>Log Admin</span>
                 </button>
             </div>
 
@@ -911,6 +938,32 @@
                             <button class="btn btn-destructive">
                                 Reset
                             </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Logs Tab -->
+            <div class="tab-content" id="logs">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Log Aktivitas Admin</h3>
+                        <p class="card-description">Riwayat semua aktivitas yang dilakukan admin</p>
+                    </div>
+                    <div class="card-content">
+                        <div class="table-responsive">
+                            <table id="logsTable" class="display" style="width:100%">
+                                <thead>
+                                    <tr>
+                                        <th>No</th>
+                                        <th>Waktu</th>
+                                        <th>Admin</th>
+                                        <th>Aksi</th>
+                                        <th>Deskripsi</th>
+                                        <th>IP Address</th>
+                                    </tr>
+                                </thead>
+                            </table>
                         </div>
                     </div>
                 </div>
@@ -1291,8 +1344,19 @@
         
         function deleteCandidate(candidateNumber) {
             if (confirm(`Apakah Anda yakin ingin menghapus Pasangan Calon ${candidateNumber}?`)) {
-                alert(`Pasangan Calon ${candidateNumber} berhasil dihapus!`);
-                // Add delete logic here
+                fetch('<?= base_url('candidate/delete') ?>', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: `candidate_number=${candidateNumber}`
+                })
+                .then(response => response.json())
+                .then(data => {
+                    showNotification(data.message, data.status);
+                    if (data.status === 'success') {
+                        setTimeout(() => location.reload(), 1000);
+                    }
+                })
+                .catch(() => showNotification('Terjadi kesalahan', 'error'));
             }
         }
         
@@ -1348,7 +1412,7 @@
         });
 
         // DataTable initialization
-        let usersTable;
+        let usersTable, logsTable;
         
         function initUsersTable() {
             usersTable = $('#usersTable').DataTable({
@@ -1368,6 +1432,38 @@
                     { data: 6, orderable: false }
                 ],
                 pageLength: 25,
+                language: {
+                    search: 'Cari:',
+                    lengthMenu: 'Tampilkan _MENU_ data per halaman',
+                    info: 'Menampilkan _START_ sampai _END_ dari _TOTAL_ data',
+                    paginate: {
+                        first: 'Pertama',
+                        last: 'Terakhir',
+                        next: 'Selanjutnya',
+                        previous: 'Sebelumnya'
+                    }
+                }
+            });
+        }
+        
+        function initLogsTable() {
+            logsTable = $('#logsTable').DataTable({
+                processing: true,
+                serverSide: true,
+                ajax: {
+                    url: '<?= base_url('admin/logs_datatable') ?>',
+                    type: 'POST'
+                },
+                columns: [
+                    { data: 0, orderable: false },
+                    { data: 1 },
+                    { data: 2 },
+                    { data: 3, orderable: false },
+                    { data: 4, orderable: false },
+                    { data: 5, orderable: false }
+                ],
+                pageLength: 25,
+                order: [[1, 'desc']],
                 language: {
                     search: 'Cari:',
                     lengthMenu: 'Tampilkan _MENU_ data per halaman',
@@ -1592,6 +1688,7 @@
             initCharts();
             loadVoteData();
             initUsersTable();
+            initLogsTable();
             updateVotingStatus();
             
             // Auto refresh every 30 seconds

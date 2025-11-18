@@ -8,6 +8,7 @@ class Admin extends CI_Controller {
         $this->load->model('Auth_model');
         $this->load->model('Candidate_model');
         $this->load->model('Settings_model');
+        $this->load->model('Log_model');
         $this->check_login();
     }
 
@@ -32,8 +33,10 @@ class Admin extends CI_Controller {
 
     public function delete_user() {
         $user_id = $this->input->post('user_id');
+        $user = $this->Auth_model->get_user_by_id($user_id);
         
         if ($this->Auth_model->delete_user($user_id)) {
+            $this->Log_model->add_log('DELETE_USER', 'Menghapus pemilih: ' . $user['name'] . ' (' . $user['user_id'] . ')');
             $response = array('status' => 'success', 'message' => 'User berhasil dihapus');
         } else {
             $response = array('status' => 'error', 'message' => 'Gagal menghapus user');
@@ -44,8 +47,10 @@ class Admin extends CI_Controller {
 
     public function reset_password() {
         $user_id = $this->input->post('user_id');
+        $user = $this->Auth_model->get_user_by_id($user_id);
         
         if ($this->Auth_model->reset_password($user_id)) {
+            $this->Log_model->add_log('RESET_PASSWORD', 'Reset password pemilih: ' . $user['name'] . ' (' . $user['user_id'] . ')');
             $response = array('status' => 'success', 'message' => 'Password berhasil direset');
         } else {
             $response = array('status' => 'error', 'message' => 'Gagal reset password');
@@ -60,6 +65,8 @@ class Admin extends CI_Controller {
         $kelas = $this->input->post('kelas');
         $phone = $this->input->post('phone');
         
+        $old_user = $this->Auth_model->get_user_by_id($user_id);
+        
         $data = array(
             'name' => $name,
             'kelas' => $kelas,
@@ -67,6 +74,7 @@ class Admin extends CI_Controller {
         );
         
         if ($this->Auth_model->update_user($user_id, $data)) {
+            $this->Log_model->add_log('EDIT_USER', 'Edit pemilih: ' . $old_user['name'] . ' menjadi ' . $name . ' (' . $phone . ', ' . $kelas . ')');
             $response = array('status' => 'success', 'message' => 'Data user berhasil diupdate');
         } else {
             $response = array('status' => 'error', 'message' => 'Gagal update data user');
@@ -135,9 +143,61 @@ class Admin extends CI_Controller {
         }
         
         if ($this->Settings_model->update_voting_schedule($start_time, $end_time)) {
+            $this->Log_model->add_log('UPDATE_SCHEDULE', 'Update jadwal pemilihan: ' . date('d M Y H:i', strtotime($start_time)) . ' - ' . date('d M Y H:i', strtotime($end_time)));
             echo json_encode(array('status' => 'success', 'message' => 'Jadwal pemilihan berhasil diupdate'));
         } else {
             echo json_encode(array('status' => 'error', 'message' => 'Gagal mengupdate jadwal'));
         }
+    }
+
+    public function logs_datatable() {
+        $draw = $this->input->post('draw');
+        $start = $this->input->post('start');
+        $length = $this->input->post('length');
+        $search = $this->input->post('search')['value'];
+        $order_column = $this->input->post('order')[0]['column'];
+        $order_dir = $this->input->post('order')[0]['dir'];
+        
+        $logs = $this->Log_model->get_logs_datatable($start, $length, $search, $order_column, $order_dir);
+        $total_records = $this->Log_model->count_all_logs();
+        $filtered_records = $this->Log_model->count_logs_datatable($search);
+        
+        $data = array();
+        $no = $start + 1;
+        
+        foreach ($logs as $log) {
+            $row = array();
+            $row[] = $no++;
+            $row[] = date('d M Y, H:i:s', strtotime($log['created_at']));
+            $row[] = $log['admin_name'];
+            $row[] = $this->get_action_badge($log['action']);
+            $row[] = $log['description'];
+            $row[] = $log['ip_address'];
+            $data[] = $row;
+        }
+        
+        $response = array(
+            'draw' => intval($draw),
+            'recordsTotal' => $total_records,
+            'recordsFiltered' => $filtered_records,
+            'data' => $data
+        );
+        
+        echo json_encode($response);
+    }
+
+    private function get_action_badge($action) {
+        $badges = array(
+            'DELETE_USER' => '<span class="badge-danger">Hapus User</span>',
+            'RESET_PASSWORD' => '<span class="badge-warning">Reset Password</span>',
+            'EDIT_USER' => '<span class="badge-primary">Edit User</span>',
+            'UPDATE_SCHEDULE' => '<span class="badge-success">Update Jadwal</span>',
+            'IMPORT_USERS' => '<span class="badge-info">Import Data</span>',
+            'ADD_CANDIDATE' => '<span class="badge-success">Tambah Kandidat</span>',
+            'EDIT_CANDIDATE' => '<span class="badge-primary">Edit Kandidat</span>',
+            'DELETE_CANDIDATE' => '<span class="badge-danger">Hapus Kandidat</span>'
+        );
+        
+        return isset($badges[$action]) ? $badges[$action] : '<span class="badge-secondary">' . $action . '</span>';
     }
 }

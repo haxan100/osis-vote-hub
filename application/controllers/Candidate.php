@@ -6,6 +6,7 @@ class Candidate extends CI_Controller {
     public function __construct() {
         parent::__construct();
         $this->load->model('Candidate_model');
+        $this->load->model('Log_model');
         $this->check_admin();
     }
 
@@ -41,12 +42,15 @@ class Candidate extends CI_Controller {
 
         if ($candidate_id) {
             // Update
+            $old_candidate = $this->Candidate_model->get_candidate_by_number($candidate_id);
             $this->Candidate_model->update_candidate($candidate_id, $data);
+            $this->Log_model->add_log('EDIT_CANDIDATE', 'Edit kandidat nomor ' . $candidate_id . ': ' . $ketua_name . ' & ' . $wakil_name);
             $message = 'Kandidat berhasil diperbarui!';
         } else {
             // Insert
             $data['candidate_number'] = $candidate_number;
             $this->Candidate_model->insert_candidate($data);
+            $this->Log_model->add_log('ADD_CANDIDATE', 'Tambah kandidat nomor ' . $candidate_number . ': ' . $ketua_name . ' & ' . $wakil_name);
             $message = 'Kandidat berhasil ditambahkan!';
         }
 
@@ -69,5 +73,17 @@ class Candidate extends CI_Controller {
             }
         }
         return false;
+    }
+
+    public function delete() {
+        $candidate_number = $this->input->post('candidate_number');
+        $candidate = $this->Candidate_model->get_candidate_by_number($candidate_number);
+        
+        if ($this->Candidate_model->delete_candidate($candidate_number)) {
+            $this->Log_model->add_log('DELETE_CANDIDATE', 'Hapus kandidat nomor ' . $candidate_number . ': ' . $candidate['ketua_name'] . ' & ' . $candidate['wakil_name']);
+            echo json_encode(array('status' => 'success', 'message' => 'Kandidat berhasil dihapus'));
+        } else {
+            echo json_encode(array('status' => 'error', 'message' => 'Gagal menghapus kandidat'));
+        }
     }
 }

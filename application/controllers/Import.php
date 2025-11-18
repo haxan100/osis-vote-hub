@@ -10,6 +10,7 @@ class Import extends CI_Controller {
     public function __construct() {
         parent::__construct();
         $this->load->model('Auth_model');
+        $this->load->model('Log_model');
         $this->load->library('session');
         
         // Check if admin is logged in
@@ -148,6 +149,11 @@ class Import extends CI_Controller {
             $message = "Berhasil import $success_count data";
             if ($error_count > 0) {
                 $message .= ", $error_count data gagal";
+            }
+            
+            // Log import activity
+            if ($success_count > 0) {
+                $this->Log_model->add_log('IMPORT_USERS', "Import $success_count pemilih dari file Excel");
             }
             
             return array(
