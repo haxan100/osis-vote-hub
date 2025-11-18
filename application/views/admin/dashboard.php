@@ -382,6 +382,127 @@
             transform: translateX(20px);
         }
 
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: var(--card);
+            border-radius: 20px;
+            padding: 2rem;
+            max-width: 600px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .modal-title {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--foreground);
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--muted-foreground);
+        }
+
+        .photo-upload {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1rem;
+            padding: 1rem;
+            border: 2px dashed var(--border);
+            border-radius: 12px;
+            margin-bottom: 1rem;
+        }
+
+        .photo-preview {
+            width: 120px;
+            height: 120px;
+            border-radius: 12px;
+            object-fit: cover;
+            border: 2px solid var(--border);
+        }
+
+        .photo-placeholder {
+            width: 120px;
+            height: 120px;
+            border-radius: 12px;
+            background: var(--muted);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            color: var(--muted-foreground);
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        .upload-btn {
+            padding: 0.5rem 1rem;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.875rem;
+        }
+
+        .textarea {
+            width: 100%;
+            min-height: 100px;
+            padding: 0.75rem;
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            font-size: 0.875rem;
+            background: var(--background);
+            resize: vertical;
+            font-family: inherit;
+        }
+
+        .textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .photo-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .couple-photo {
+            grid-column: 1 / -1;
+        }
+
         @keyframes fadeIn {
             from {
                 opacity: 0;
@@ -536,29 +657,44 @@
                             <div class="candidate-item">
                                 <div>
                                     <p style="font-weight: 600;">Pasangan Calon 1</p>
-                                    <p style="font-size: 0.875rem; color: var(--muted-foreground);">Kelola visi, misi, dan data kandidat</p>
+                                    <p style="font-size: 0.875rem; color: var(--muted-foreground);">Ahmad Rizki & Sari Dewi</p>
                                 </div>
-                                <button class="btn">
-                                    👤 Edit
-                                </button>
+                                <div style="display: flex; gap: 0.5rem;">
+                                    <button class="btn" onclick="editCandidate(1)">
+                                        ✏️ Edit
+                                    </button>
+                                    <button class="btn btn-destructive" onclick="deleteCandidate(1)">
+                                        🗑️ Hapus
+                                    </button>
+                                </div>
                             </div>
                             <div class="candidate-item">
                                 <div>
                                     <p style="font-weight: 600;">Pasangan Calon 2</p>
-                                    <p style="font-size: 0.875rem; color: var(--muted-foreground);">Kelola visi, misi, dan data kandidat</p>
+                                    <p style="font-size: 0.875rem; color: var(--muted-foreground);">Siti Aisyah & Budi Hartono</p>
                                 </div>
-                                <button class="btn">
-                                    👤 Edit
-                                </button>
+                                <div style="display: flex; gap: 0.5rem;">
+                                    <button class="btn" onclick="editCandidate(2)">
+                                        ✏️ Edit
+                                    </button>
+                                    <button class="btn btn-destructive" onclick="deleteCandidate(2)">
+                                        🗑️ Hapus
+                                    </button>
+                                </div>
                             </div>
                             <div class="candidate-item">
                                 <div>
                                     <p style="font-weight: 600;">Pasangan Calon 3</p>
-                                    <p style="font-size: 0.875rem; color: var(--muted-foreground);">Kelola visi, misi, dan data kandidat</p>
+                                    <p style="font-size: 0.875rem; color: var(--muted-foreground);">Muhammad Farhan & Rina Sari</p>
                                 </div>
-                                <button class="btn">
-                                    👤 Edit
-                                </button>
+                                <div style="display: flex; gap: 0.5rem;">
+                                    <button class="btn" onclick="editCandidate(3)">
+                                        ✏️ Edit
+                                    </button>
+                                    <button class="btn btn-destructive" onclick="deleteCandidate(3)">
+                                        🗑️ Hapus
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -639,6 +775,76 @@
         </div>
     </main>
 
+    <!-- Edit Candidate Modal -->
+    <div class="modal" id="editModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Edit Kandidat</h3>
+                <button class="close-btn" onclick="closeEditModal()">&times;</button>
+            </div>
+            
+            <form id="editCandidateForm">
+                <input type="hidden" id="candidateId">
+                
+                <!-- Photo Uploads -->
+                <div class="photo-grid">
+                    <div class="photo-upload">
+                        <div class="photo-placeholder" id="ketuaPreview">👤</div>
+                        <input type="file" id="ketuaPhoto" class="file-input" accept="image/*" onchange="previewPhoto(this, 'ketuaPreview')">
+                        <button type="button" class="upload-btn" onclick="document.getElementById('ketuaPhoto').click()">
+                            Upload Foto Ketua
+                        </button>
+                    </div>
+                    
+                    <div class="photo-upload">
+                        <div class="photo-placeholder" id="wakilPreview">👤</div>
+                        <input type="file" id="wakilPhoto" class="file-input" accept="image/*" onchange="previewPhoto(this, 'wakilPreview')">
+                        <button type="button" class="upload-btn" onclick="document.getElementById('wakilPhoto').click()">
+                            Upload Foto Wakil
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="photo-upload couple-photo">
+                    <div class="photo-placeholder" id="couplePreview" style="width: 200px; height: 150px;">👥</div>
+                    <input type="file" id="couplePhoto" class="file-input" accept="image/*" onchange="previewPhoto(this, 'couplePreview')">
+                    <button type="button" class="upload-btn" onclick="document.getElementById('couplePhoto').click()">
+                        Upload Foto Bersama (Foto Utama)
+                    </button>
+                </div>
+                
+                <!-- Names -->
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+                    <div class="form-group">
+                        <label class="label">Nama Ketua</label>
+                        <input type="text" id="ketuaName" class="input" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="label">Nama Wakil</label>
+                        <input type="text" id="wakilName" class="input" required>
+                    </div>
+                </div>
+                
+                <!-- Vision -->
+                <div class="form-group">
+                    <label class="label">Visi</label>
+                    <textarea id="vision" class="textarea" placeholder="Masukkan visi kandidat..." required></textarea>
+                </div>
+                
+                <!-- Mission -->
+                <div class="form-group">
+                    <label class="label">Misi</label>
+                    <textarea id="mission" class="textarea" placeholder="Masukkan misi kandidat..." required></textarea>
+                </div>
+                
+                <div style="display: flex; gap: 1rem; justify-content: flex-end;">
+                    <button type="button" class="btn" onclick="closeEditModal()">Batal</button>
+                    <button type="submit" class="btn btn-primary">Simpan</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <script>
         let pieChart, barChart;
         let isDarkMode = localStorage.getItem('darkMode') === 'true';
@@ -712,7 +918,7 @@
                     labels: ['Paslon 1', 'Paslon 2', 'Paslon 3'],
                     datasets: [{
                         data: [45, 32, 23],
-                        backgroundColor: [colors.primary, colors.secondary, colors.accent],
+                        backgroundColor: [colors.candidate1, colors.candidate2, colors.candidate3],
                         borderWidth: 2,
                         borderColor: colors.grid
                     }]
@@ -741,7 +947,7 @@
                     datasets: [{
                         label: 'Jumlah Suara',
                         data: [45, 32, 23],
-                        backgroundColor: [colors.primary, colors.secondary, colors.accent],
+                        backgroundColor: [colors.candidate1, colors.candidate2, colors.candidate3],
                         borderWidth: 2,
                         borderColor: colors.grid,
                         borderRadius: 8
@@ -784,13 +990,13 @@
                 const colors = getChartColors();
                 
                 // Update pie chart
-                pieChart.data.datasets[0].backgroundColor = [colors.primary, colors.secondary, colors.accent];
+                pieChart.data.datasets[0].backgroundColor = [colors.candidate1, colors.candidate2, colors.candidate3];
                 pieChart.data.datasets[0].borderColor = colors.grid;
                 pieChart.options.plugins.legend.labels.color = colors.text;
                 pieChart.update();
                 
                 // Update bar chart
-                barChart.data.datasets[0].backgroundColor = [colors.primary, colors.secondary, colors.accent];
+                barChart.data.datasets[0].backgroundColor = [colors.candidate1, colors.candidate2, colors.candidate3];
                 barChart.data.datasets[0].borderColor = colors.grid;
                 barChart.options.scales.y.ticks.color = colors.text;
                 barChart.options.scales.y.grid.color = colors.grid;
