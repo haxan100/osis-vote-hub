@@ -13,6 +13,11 @@ class Candidate_model extends CI_Model {
         return $this->db->get('candidates')->row_array();
     }
 
+    public function get_candidate_by_number($candidate_number) {
+        $this->db->where('candidate_number', $candidate_number);
+        return $this->db->get('candidates')->row_array();
+    }
+
     public function insert_candidate($data) {
         return $this->db->insert('candidates', $data);
     }
