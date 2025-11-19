@@ -693,7 +693,7 @@
     <header class="header">
         <div class="header-content">
             <div class="header-left">
-                <div class="logo">🛡️</div>
+                <div class="logo">E</div>
                 <div>
                     <h1 class="header-title">Dashboard Admin</h1>
                     <p class="header-subtitle"><?= $admin_name ?></p>

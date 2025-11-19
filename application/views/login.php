@@ -215,7 +215,7 @@
     <div class="login-container">
         <div class="login-card">
             <div class="header">
-                <div class="logo">🗳️</div>
+                <div class="logo">E</div>
                 <h1 class="title">E-Voting OSIS</h1>
                 <p class="subtitle">Pemilihan Ketua & Wakil OSIS</p>
             </div>
