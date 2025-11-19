@@ -1,4 +1,15 @@
+DirectoryIndex index.php
+
 RewriteEngine On
-RewriteCond %{REQUEST_FILENAME} !-f
-RewriteCond %{REQUEST_FILENAME} !-d
-RewriteRule ^(.*)$ index.php?/$1 [L,QSA]
+RewriteBase /porto/e-voting/
+
+# Hanya rewrite request DI DALAM folder ini saja!
+RewriteCond %{REQUEST_URI} ^/porto/e-voting/ [NC]
+
+# Jangan rewrite file fisik
+RewriteCond %{REQUEST_FILENAME} -f [OR]
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteRule ^ - [L]
+
+# Selain itu lempar ke CI index.php
+RewriteRule ^(.*)$ index.php/$1 [L,QSA]
